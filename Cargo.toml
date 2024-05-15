@@ -1,0 +1,9 @@
+[package]
+name = "paniclogger"
+description = "Panic logger"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Peter Todorov <ptodorov@cytec.bg>"]
+
+[dependencies]
