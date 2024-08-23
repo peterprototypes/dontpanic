@@ -57,7 +57,7 @@
 //!
 //! To obtain a `PROJECT_API_KEY`, check out [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server) documentation.
 //!
-//! # Using dontpanic with [tracing](https://docs.rs/log/latest/tracing/)
+//! # Using dontpanic with [tracing](https://docs.rs/tracing/latest/)
 //!
 //! To enable tracing support, include dontpanic with the `tracing` feature enabled:
 //! ```toml
