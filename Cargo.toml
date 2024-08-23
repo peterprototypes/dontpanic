@@ -1,9 +1,27 @@
 [package]
 name = "dontpanic"
-description = "Dont Panic"
+description = "Get instant notifications about any panic!(); in your codebase."
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 authors = ["Peter Todorov <ptodorov@cytec.bg>"]
+documentation = "https://docs.rs/dontpanic"
+repository = "https://github.com/peterprototypes/dontpanic"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+log = ["dep:log"]
+tracing = ["dep:tracing", "dep:tracing-subscriber"]
 
 [dependencies]
+ureq = { version = "2.9", features = ["json"] }
+log = { version = "0.4", optional = true }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+
+[dependencies.ring-channel]
+version = "0.12"
+default-features = false
+features = ["std"]
