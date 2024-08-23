@@ -1,4 +1,5 @@
 <div align="center">
+    <img src="https://raw.githubusercontent.com/peterprototypes/dontpanic-server/253282285864ef092281bc63be70f79bdb10670b/static/dontpanic-ferris-logo.svg" width="20%" />
     <h1>dontpanic</h1>
     <p>
         Send Rust panic!() and log::error!() messages to a backend server.
@@ -46,6 +47,10 @@ fn main() -> Result<()> {
 ```
 
 `<PROJECT_API_KEY>` can be obtained from [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server). For more examples see the [Documentation](https://docs.rs/dontpanic).
+
+## Contributing
+
+All commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
 
 ## License
 
