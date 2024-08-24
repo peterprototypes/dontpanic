@@ -347,10 +347,16 @@ fn init_hook(config: Config, log_recv: RingReceiver<LogEvent>) {
     let previous_panic_hook = panic::take_hook();
 
     panic::set_hook(Box::new(move |info| {
-        let Some(title) = info.payload().downcast_ref::<&str>() else {
+        let title;
+
+        if let Some(panic_msg) = info.payload().downcast_ref::<&str>() {
+            title = *panic_msg;
+        } else if let Some(panic_msg) = info.payload().downcast_ref::<String>() {
+            title = panic_msg;
+        } else {
             previous_panic_hook(info);
             return;
-        };
+        }
 
         let mut title = title.to_string();
 
