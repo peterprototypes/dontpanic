@@ -10,6 +10,7 @@ repository = "https://github.com/peterprototypes/dontpanic"
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 log = ["dep:log"]

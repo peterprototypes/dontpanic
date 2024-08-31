@@ -1,4 +1,4 @@
-#![feature(doc_cfg)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 //! Client library for [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server)
 //!
@@ -148,7 +148,7 @@ impl Client {
     ///     panic!("Noooooo");
     /// }
     /// ```
-    #[doc(cfg(feature = "log"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "log")))]
     #[cfg(feature = "log")]
     pub fn set_logger(&self, logger: impl Log + 'static) -> Result<(), Error> {
         let wrapper = log_wrapper::LogWrapper {
@@ -181,7 +181,7 @@ impl Client {
     ///     panic!("Noooooo");
     /// }
     /// ```
-    #[doc(cfg(feature = "tracing"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tracing")))]
     #[cfg(feature = "tracing")]
     pub fn tracing_layer(&self) -> TracingLayer {
         TracingLayer {
@@ -264,8 +264,8 @@ impl Builder {
     }
 
     /// Enabled by default. `log::error!`, `tracing::error!` and `tracing::event!(Level::ERROR, ...` will trigger a report to be sent to the configured backend server.
-    #[doc(cfg(feature = "log"))]
-    #[doc(cfg(feature = "tracing"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tracing")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "log")))]
     #[cfg(any(feature = "log", feature = "tracing"))]
     pub fn send_report_on_log_errors(mut self, enabled: bool) -> Self {
         self.config.report_on_log_errors = enabled;
@@ -322,7 +322,7 @@ impl Builder {
 ///         // or
 ///         .version(env!("CI_COMMIT_SHORT_SHA")) // GitLab
 ///         .build()?;
-///     
+///
 ///     panic!("This will send you an email, notification or Slack/Teams message");
 ///
 ///     Ok(())

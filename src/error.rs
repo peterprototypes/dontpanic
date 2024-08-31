@@ -9,7 +9,7 @@ pub enum Error {
     /// An empty API Key was provided to [`builder`](crate::builder)
     EmptyApiKey,
     /// Error returned by [`set_logger`](crate::Client::set_logger) if another logger has already been set.
-    #[doc(cfg(feature = "log"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "log")))]
     #[cfg(feature = "log")]
     SetLoggerError(SetLoggerError),
 }
