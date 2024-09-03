@@ -28,7 +28,7 @@
 //! Make sure to include this library with the `log` feature enabled:
 //! ```toml
 //! [dependencies]
-//! dontpanic = { version = "0.1", features = ["log"] }
+//! dontpanic = { version = "*", features = ["log"] }
 //! ```
 //!
 //! Then, [`Client::set_logger`] will accept any valid logging implementation. Initialize everything as early as possible, as panics before initialization won't be caught.
@@ -36,14 +36,14 @@
 //! use anyhow::Result;
 //!
 //! fn main() -> Result<()> {
-//!     let client = dontpanic::builder("<PROJECT_API_KEY>")
+//!     let dontpanic = dontpanic::builder("<PROJECT_API_KEY>")
 //!         .environment("production")
 //!         .version(env!("CARGO_PKG_VERSION"))
 //!         .build()?
 //!
 //!     // Important: call .build() not .init()
 //!     let logger = env_logger::Builder::from_default_env().build();
-//!     client.set_logger(logger)?;
+//!     dontpanic.set_logger(logger)?;
 //!
 //!     log::info!("What's happening here?");
 //!     log::error!("Booooom");
@@ -62,22 +62,24 @@
 //! To enable tracing support, include dontpanic with the `tracing` feature enabled:
 //! ```toml
 //! [dependencies]
-//! dontpanic = { version = "0.1", features = ["tracing"] }
+//! dontpanic = { version = "*", features = ["tracing"] }
 //! ```
 //!
-//! Then `client.tracing_layer()` can be used in conjunction with any tracing subscriber. This example is with the fmt subscriber:
+//! Then `dontpanic.tracing_layer()` can be used in conjunction with any tracing subscriber. This example is with the fmt subscriber:
 //! ```no_run
 //! use anyhow::Result;
 //!
+//! use tracing_subscriber::prelude::*;
+//!
 //! fn main() -> Result<()> {
-//!     let client = dontpanic::builder("<PROJECT_API_KEY>")
+//!     let dontpanic = dontpanic::builder("<PROJECT_API_KEY>")
 //!         .environment("production")
 //!         .version(env!("CARGO_PKG_VERSION"))
 //!         .build()?
 //!
 //!     tracing_subscriber::registry()
 //!         .with(tracing_subscriber::fmt::layer())
-//!         .with(client.tracing_layer())
+//!         .with(dontpanic.tracing_layer())
 //!         .init();
 //!
 //!     tracing::info!("What's happening here?");
@@ -91,13 +93,17 @@
 //! }
 //! ```
 
-use std::backtrace::Backtrace;
 use std::num::NonZeroUsize;
 use std::panic;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+use std::{backtrace::Backtrace, sync::atomic::Ordering};
 
 #[cfg(feature = "log")]
 use log::Log;
-use ring_channel::{ring_channel, RingReceiver, RingSender};
+#[cfg(any(feature = "log", feature = "tracing"))]
+use ring_channel::RingSender;
+use ring_channel::{ring_channel, RingReceiver};
 use ureq::json;
 
 mod error;
@@ -120,16 +126,39 @@ struct Config {
     report_on_log_errors: bool,
     environment: Option<String>,
     version: Option<String>,
+    is_enabled: Arc<AtomicBool>,
 }
 
 /// `dontpanic` library client.
 pub struct Client {
     config: Config,
+    #[cfg(any(feature = "log", feature = "tracing"))]
     log_rx: RingReceiver<LogEvent>,
+    #[cfg(any(feature = "log", feature = "tracing"))]
     log_tx: RingSender<LogEvent>,
 }
 
 impl Client {
+    /// Sets the enabled state of the client. This is useful when using the same client instance across different environments.
+    ///
+    /// By default the enabled state is `true`
+    ///
+    /// ```no_run
+    /// use anyhow::Result;
+    ///
+    /// fn main() -> Result<()> {
+    ///     let dontpanic = dontpanic::builder("<PROJECT_API_KEY>").build()?;
+    ///
+    ///     // Enable in release builds only
+    ///     dontpanic.set_enabled(!cfg!(debug_assertions));
+    ///
+    ///     Ok(())
+    /// }
+    ///```
+    pub fn set_enabled(&self, enabled: bool) {
+        self.config.is_enabled.store(enabled, Ordering::Relaxed);
+    }
+
     /// Register a Log implementor with this library, this sets it as the default logger. Works with any type that implements [`Log`]
     ///
     /// See [Available logging implementations](https://docs.rs/log/latest/log/#available-logging-implementations) in the [log](https://docs.rs/log/latest/log/) crate.
@@ -138,11 +167,11 @@ impl Client {
     ///
     /// ```no_run
     /// fn main() {
-    ///     let client = dontpanic::builder("<PROJECT_API_KEY>").build().unwrap()
+    ///     let dontpanic = dontpanic::builder("<PROJECT_API_KEY>").build().unwrap()
     ///
     ///     // Important: call .build() not .init()
     ///     let logger = env_logger::Builder::from_default_env().build();
-    ///     client.set_logger(logger)?;
+    ///     dontpanic.set_logger(logger)?;
     ///
     ///     log::info!("Luke, I am your father.");
     ///     panic!("Noooooo");
@@ -169,12 +198,14 @@ impl Client {
     ///
     /// Example with [`mod@tracing_subscriber::fmt`]:
     /// ```no_run
+    /// use tracing_subscriber::prelude::*;
+    ///
     /// fn main() {
-    ///     let client = dontpanic::builder("<PROJECT_API_KEY>").build().unwrap()
+    ///     let dontpanic = dontpanic::builder("<PROJECT_API_KEY>").build().unwrap()
     ///
     ///     tracing_subscriber::registry()
     ///         .with(tracing_subscriber::fmt::layer())
-    ///         .with(client.tracing_layer())
+    ///         .with(dontpanic.tracing_layer())
     ///         .init();
     ///
     ///     log::info!("Mr. Stark, I don't feel so good");
@@ -285,13 +316,15 @@ impl Builder {
             return Err(Error::EmptyApiKey);
         }
 
-        let (log_tx, log_rx) = ring_channel(NonZeroUsize::try_from(100).unwrap());
+        let (_log_tx, log_rx) = ring_channel(NonZeroUsize::try_from(100).unwrap());
 
         init_hook(self.config.clone(), log_rx.clone());
 
         Ok(Client {
             config: self.config,
-            log_tx,
+            #[cfg(any(feature = "log", feature = "tracing"))]
+            log_tx: _log_tx,
+            #[cfg(any(feature = "log", feature = "tracing"))]
             log_rx,
         })
     }
@@ -343,6 +376,7 @@ pub fn builder(api_key: impl Into<String>) -> Builder {
             report_on_log_errors: true,
             version: None,
             environment: None,
+            is_enabled: Arc::new(AtomicBool::new(true)),
         },
     }
 }
@@ -351,6 +385,11 @@ fn init_hook(config: Config, log_recv: RingReceiver<LogEvent>) {
     let previous_panic_hook = panic::take_hook();
 
     panic::set_hook(Box::new(move |info| {
+        if !config.is_enabled.load(Ordering::Relaxed) {
+            previous_panic_hook(info);
+            return;
+        }
+
         let title;
 
         if let Some(panic_msg) = info.payload().downcast_ref::<&str>() {

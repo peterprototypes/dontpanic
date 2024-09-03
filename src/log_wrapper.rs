@@ -1,4 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    sync::atomic::Ordering,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use log::{Level, Log, Metadata, Record};
 use ring_channel::{RingReceiver, RingSender};
@@ -38,6 +41,10 @@ where
 
     fn log(&self, record: &Record) {
         self.next.log(record);
+
+        if !self.config.is_enabled.load(Ordering::Relaxed) {
+            return;
+        }
 
         let _ = self.tx.send(LogEvent::from(record));
 

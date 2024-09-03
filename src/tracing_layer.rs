@@ -1,4 +1,5 @@
 use std::fmt::{self, Write};
+use std::sync::atomic::Ordering;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use ring_channel::{RingReceiver, RingSender};
@@ -43,6 +44,10 @@ pub struct TracingLayer {
 
 impl<S: Subscriber> Layer<S> for TracingLayer {
     fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
+        if !self.config.is_enabled.load(Ordering::Relaxed) {
+            return;
+        }
+
         let metadata = event.metadata();
 
         if !metadata.is_event() {
