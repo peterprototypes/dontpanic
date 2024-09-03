@@ -257,9 +257,13 @@ impl Builder {
 
     /// Controls where reports are sent to.
     ///
-    /// Set this to point to the backend server url where you want to send reports. For more information see [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server) documentation.
-    pub fn backend_url(mut self, url: String) -> Self {
-        self.config.backend_url = url;
+    /// Set this to point to the backend server url of your choice.
+    /// This should be the base url of the [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server) including the protocol without a
+    /// trailing slash. Eg. `https://dontpanic.example.com` or `http://127.0.0.1:8080`
+    ///
+    /// For more information see [Don't Panic Server](https://github.com/peterprototypes/dontpanic-server) documentation.
+    pub fn backend_url(mut self, url: impl AsRef<str>) -> Self {
+        self.config.backend_url = format!("{}/ingress", url.as_ref());
         self
     }
 
