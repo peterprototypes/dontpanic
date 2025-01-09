@@ -403,6 +403,8 @@ fn init_hook(config: Config, log_recv: RingReceiver<LogEvent>) {
 
         let mut title = title.to_string();
 
+        // info.location() should always return Some, but this may change in the future
+
         let location = info.location().map(|location| {
             title = format!("{title} in {}:{}", location.file(), location.line());
 
@@ -441,7 +443,7 @@ fn send_report(
     let handle = std::thread::current();
     let backtrace = Backtrace::force_capture();
 
-    let location = loc.map(|loc| {
+    let location = loc.as_ref().map(|loc| {
         ureq::json!({
             "f": loc.file,
             "l": loc.line,
@@ -449,7 +451,10 @@ fn send_report(
         })
     });
 
+    let title = title.into();
+
     let event = ureq::json!({
+        "title": &title,
         "loc": location,
         "ver": config.version,
         "tid": format!("{:?}", handle.id()),
@@ -460,10 +465,16 @@ fn send_report(
         "log": log
     });
 
+    let uid = if let Some(loc) = loc {
+        format!("{}:{}", loc.file, loc.line)
+    } else {
+        title
+    };
+
     let res = ureq::post(&config.backend_url).send_json(ureq::json!({
         "key": config.api_key,
         "env": config.environment,
-        "name": title.into(),
+        "uid": uid,
         "data": event,
     }));
 

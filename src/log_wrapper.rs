@@ -48,6 +48,10 @@ where
 
         let _ = self.tx.send(LogEvent::from(record));
 
+        // Level::Error is the only level that we want to report on. Don't Panic is not intended to
+        // be a full log storage system, but rather a way to get a quick notification when
+        // something goes wrong.
+
         if record.level() == Level::Error && self.config.report_on_log_errors {
             let title = format!("{}", record.args());
 
