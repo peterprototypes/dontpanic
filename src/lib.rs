@@ -465,16 +465,9 @@ fn send_report(
         "log": log
     });
 
-    let uid = if let Some(loc) = loc {
-        format!("{}:{}", loc.file, loc.line)
-    } else {
-        title
-    };
-
     let res = ureq::post(&config.backend_url).send_json(ureq::json!({
         "key": config.api_key,
         "env": config.environment,
-        "uid": uid,
         "data": event,
     }));
 
