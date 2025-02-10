@@ -24,7 +24,7 @@ impl From<&Record<'_>> for LogEvent {
     }
 }
 
-pub struct LogWrapper<T> {
+pub(crate) struct LogWrapper<T> {
     pub next: T,
     pub tx: RingSender<LogEvent>,
     pub rx: RingReceiver<LogEvent>,
