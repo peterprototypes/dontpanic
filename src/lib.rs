@@ -371,7 +371,7 @@ pub fn builder(api_key: impl Into<String>) -> Builder {
     Builder {
         config: Config {
             api_key,
-            backend_url: "http://localhost:8080/ingress".into(),
+            backend_url: "https://app.dontpanic.rs/ingress".into(),
             #[cfg(any(feature = "log", feature = "tracing"))]
             report_on_log_errors: true,
             version: None,
