@@ -78,9 +78,13 @@
 //!         .build()?
 //!
 //!     tracing_subscriber::registry()
-//!         .with(tracing_subscriber::fmt::layer())
+//!         .with(
+//!             tracing_subscriber::fmt::layer()
+//!                 .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
+//!                 .json(),
+//!         )
 //!         .with(dontpanic.tracing_layer())
-//!         .init();
+//!     .init();
 //!
 //!     tracing::info!("What's happening here?");
 //!     tracing::error!("Booooom");

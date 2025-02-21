@@ -72,8 +72,6 @@ impl<S: Subscriber> Layer<S> for TracingLayer {
             None
         };
 
-        dbg!(&message);
-
         send_report(&self.config, message, loc, &self.rx)
     }
 }
