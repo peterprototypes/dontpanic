@@ -405,18 +405,13 @@ fn init_hook(config: Config, log_recv: RingReceiver<LogEvent>) {
             return;
         }
 
-        let mut title = title.to_string();
+        let title = title.to_string();
 
         // info.location() should always return Some, but this may change in the future
-
-        let location = info.location().map(|location| {
-            title = format!("{title} in {}:{}", location.file(), location.line());
-
-            ReportLocation {
-                file: location.file().to_string(),
-                line: location.line(),
-                col: Some(location.column()),
-            }
+        let location = info.location().map(|location| ReportLocation {
+            file: location.file().to_string(),
+            line: location.line(),
+            col: Some(location.column()),
         });
 
         send_report(&config, title, location, &log_recv);
